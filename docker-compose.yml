@@ -1,0 +1,38 @@
+services:
+  web:
+    build: .
+    container_name: bambe-web
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_NAME: bambe
+      DB_USER: bambe
+      DB_PASS: bambe123
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: bambe-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: bambe
+      MYSQL_USER: bambe
+      MYSQL_PASSWORD: bambe123
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  db_data:

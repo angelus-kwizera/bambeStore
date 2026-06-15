@@ -1,0 +1,16 @@
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+vendor/
+node_modules/
+uploads/products/*
+!uploads/products/.gitkeep
+.git
+.github
+.dockerignore
+Dockerfile
+
