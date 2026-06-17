@@ -42,6 +42,10 @@ CREATE TABLE orders (
     order_number VARCHAR(20) NOT NULL UNIQUE,
     total DECIMAL(10, 2) NOT NULL,
     status ENUM('pending', 'confirmed', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
+    payment_method ENUM('cod', 'paypal') DEFAULT 'cod',
+    payment_status ENUM('pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
+    paypal_order_id VARCHAR(50) NULL,
+    paypal_capture_id VARCHAR(50) NULL,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE

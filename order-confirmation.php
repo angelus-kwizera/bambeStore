@@ -42,6 +42,12 @@ require_once __DIR__ . '/includes/header.php';
                     <span class="badge badge--success"><?= ucfirst(sanitize($order['status'])) ?></span>
                 </div>
                 <div class="confirmation__detail">
+                    <span class="confirmation__label">Payment</span>
+                    <span class="confirmation__value">
+                        <?= ($order['payment_method'] ?? 'cod') === 'paypal' ? 'PayPal (Paid)' : 'Cash on Delivery' ?>
+                    </span>
+                </div>
+                <div class="confirmation__detail">
                     <span class="confirmation__label">Total</span>
                     <span class="confirmation__value confirmation__value--total"><?= formatPrice((float) $order['total']) ?></span>
                 </div>

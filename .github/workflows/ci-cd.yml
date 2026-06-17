@@ -1,0 +1,75 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: docker compose build
+
+      - name: Start services
+        run: docker compose up -d
+
+      - name: Wait for database
+        run: |
+          for i in {1..30}; do
+            if docker compose exec -T db mysqladmin ping -h localhost -u root -prootpassword --silent; then
+              echo "Database is ready"
+              exit 0
+            fi
+            echo "Waiting for database..."
+            sleep 5
+          done
+          exit 1
+
+      - name: Health check
+        run: |
+          for i in {1..20}; do
+            if curl -sf http://localhost:8080/health.php; then
+              echo "Health check passed"
+              exit 0
+            fi
+            sleep 3
+          done
+          exit 1
+
+      - name: Verify pages load
+        run: |
+          curl -sf http://localhost:8080/ | grep -q "Bambe"
+          curl -sf http://localhost:8080/products.php | grep -q "Shop"
+          curl -sf http://localhost:8080/cart.php
+          curl -sf -X POST http://localhost:8080/api/chatbot.php \
+            -H "Content-Type: application/json" \
+            -d '{"message":"hello"}' | grep -q "reply"
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop services
+        if: always()
+        run: docker compose down -v
+
+  deploy:
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy notification
+        run: |
+          echo "Build and tests passed. Deploy to your hosting platform (Railway, Render, VPS)."
+          echo "Use: docker compose up -d --build"

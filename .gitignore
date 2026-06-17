@@ -9,8 +9,4 @@ vendor/
 node_modules/
 uploads/products/*
 !uploads/products/.gitkeep
-.git
-.github
-.dockerignore
-Dockerfile
 

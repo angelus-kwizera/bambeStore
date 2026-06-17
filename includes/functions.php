@@ -158,7 +158,7 @@ function generateOrderNumber(): string
     return 'BMB-' . strtoupper(substr(uniqid(), -8));
 }
 
-function createOrder(PDO $db, array $customerData, array $cartItems, float $total): ?array
+function createOrder(PDO $db, array $customerData, array $cartItems, float $total, array $payment = []): ?array
 {
     try {
         $db->beginTransaction();
@@ -176,15 +176,24 @@ function createOrder(PDO $db, array $customerData, array $cartItems, float $tota
         $customerId = (int) $db->lastInsertId();
 
         $orderNumber = generateOrderNumber();
+        $paymentMethod = $payment['payment_method'] ?? 'cod';
+        $paymentStatus = $payment['payment_status'] ?? ($paymentMethod === 'paypal' ? 'paid' : 'pending');
+        $orderStatus = $paymentMethod === 'paypal' ? 'confirmed' : 'confirmed';
+
         $stmt = $db->prepare(
-            'INSERT INTO orders (customer_id, order_number, total, status, notes) VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO orders (customer_id, order_number, total, status, notes, payment_method, payment_status, paypal_order_id, paypal_capture_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $customerId,
             $orderNumber,
             $total,
-            'confirmed',
+            $orderStatus,
             $customerData['notes'] ?? null,
+            $paymentMethod,
+            $paymentStatus,
+            $payment['paypal_order_id'] ?? null,
+            $payment['paypal_capture_id'] ?? null,
         ]);
         $orderId = (int) $db->lastInsertId();
 

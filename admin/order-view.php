@@ -48,6 +48,20 @@ require_once __DIR__ . '/includes/header.php';
                 <dt>Status</dt>
                 <dd><span class="badge <?= orderStatusBadgeClass($order['status']) ?>"><?= ucfirst($order['status']) ?></span></dd>
             </div>
+            <div class="detail-list__row">
+                <dt>Payment Method</dt>
+                <dd><?= ($order['payment_method'] ?? 'cod') === 'paypal' ? 'PayPal' : 'Cash on Delivery' ?></dd>
+            </div>
+            <div class="detail-list__row">
+                <dt>Payment Status</dt>
+                <dd><?= ucfirst($order['payment_status'] ?? 'pending') ?></dd>
+            </div>
+            <?php if (!empty($order['paypal_capture_id'])): ?>
+            <div class="detail-list__row">
+                <dt>PayPal Transaction</dt>
+                <dd><code><?= sanitize($order['paypal_capture_id']) ?></code></dd>
+            </div>
+            <?php endif; ?>
             <?php if (!empty($order['notes'])): ?>
             <div class="detail-list__row">
                 <dt>Notes</dt>

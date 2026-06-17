@@ -16,8 +16,10 @@ A modern e-commerce web application for **Bambe**, a Rwanda-based online fashion
 - Product listing with category filters and search
 - Product detail pages with quantity selector
 - Shopping cart (add, remove, update quantities, totals)
-- Checkout with customer details and order summary
+- Checkout with customer details, order summary, and payment options
 - Order confirmation page
+- **AI Shopping Chatbot** — product recommendations, delivery & payment help
+- **PayPal Payment** — secure online checkout (sandbox/live)
 
 ### Admin Panel (`/admin`)
 - Secure admin login
@@ -48,7 +50,13 @@ bambe/
 ├── assets/
 │   ├── css/style.css
 │   └── js/main.js
-├── config/database.php
+├── api/
+│   ├── chatbot.php
+│   ├── paypal-create-order.php
+│   └── paypal-capture.php
+├── config/
+│   ├── api.php
+│   └── database.php
 ├── database/schema.sql
 ├── includes/
 │   ├── init.php
@@ -78,6 +86,25 @@ bambe/
 | Password | `admin123` |
 
 > Change the default password before deploying to production.
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and configure API keys:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENAI_API_KEY` | No | Enables full AI chatbot (fallback works without it) |
+| `PAYPAL_CLIENT_ID` | For PayPal | From [PayPal Developer Dashboard](https://developer.paypal.com) |
+| `PAYPAL_CLIENT_SECRET` | For PayPal | Sandbox credentials for testing |
+| `PAYPAL_MODE` | No | `sandbox` (default) or `live` |
+
+## Project Report
+
+See **[PROJECT_REPORT.md](PROJECT_REPORT.md)** for the full 3–5 page academic report including architecture, CI/CD, challenges, and deliverables checklist.
 
 ## Quick Start with Docker
 

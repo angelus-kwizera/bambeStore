@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/init.php';
+require_once __DIR__ . '/includes/paypal.php';
 
 $pageTitle = 'Checkout';
 $cart = getCartItems();
@@ -13,8 +14,10 @@ if (empty($cart['items'])) {
 $deliveryFee = $cart['total'] >= 50000 ? 0 : 3000;
 $grandTotal = $cart['total'] + $deliveryFee;
 $errors = [];
+$paypalEnabled = isPayPalConfigured();
+$selectedPayment = $_POST['payment_method'] ?? 'cod';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $selectedPayment === 'cod') {
     $customerData = [
         'full_name' => trim($_POST['full_name'] ?? ''),
         'email' => trim($_POST['email'] ?? ''),
@@ -39,7 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         $db = getDBConnection();
-        $order = createOrder($db, $customerData, $cart['items'], $grandTotal);
+        $order = createOrder($db, $customerData, $cart['items'], $grandTotal, [
+            'payment_method' => 'cod',
+            'payment_status' => 'pending',
+        ]);
 
         if ($order) {
             header('Location: order-confirmation.php?order=' . urlencode($order['order_number']));
@@ -73,7 +79,7 @@ require_once __DIR__ . '/includes/header.php';
         </div>
         <?php endif; ?>
 
-        <form method="POST" class="checkout-layout" novalidate>
+        <form method="POST" class="checkout-layout" id="checkoutForm" novalidate>
             <div class="checkout-form">
                 <h2 class="checkout-form__title">Delivery Details</h2>
 
@@ -118,6 +124,30 @@ require_once __DIR__ . '/includes/header.php';
                     <label for="notes">Order Notes (optional)</label>
                     <textarea id="notes" name="notes" rows="2" placeholder="Special delivery instructions..."><?= sanitize($_POST['notes'] ?? '') ?></textarea>
                 </div>
+
+                <h2 class="checkout-form__title checkout-form__title--payment">Payment Method</h2>
+                <div class="payment-methods">
+                    <label class="payment-method">
+                        <input type="radio" name="payment_method" value="cod" <?= $selectedPayment === 'cod' ? 'checked' : '' ?>>
+                        <span class="payment-method__box">
+                            <span class="payment-method__icon">💵</span>
+                            <span class="payment-method__info">
+                                <strong>Cash on Delivery</strong>
+                                <small>Pay when your order arrives</small>
+                            </span>
+                        </span>
+                    </label>
+                    <label class="payment-method <?= !$paypalEnabled ? 'payment-method--disabled' : '' ?>">
+                        <input type="radio" name="payment_method" value="paypal" <?= $selectedPayment === 'paypal' ? 'checked' : '' ?> <?= !$paypalEnabled ? 'disabled' : '' ?>>
+                        <span class="payment-method__box">
+                            <span class="payment-method__icon">🅿️</span>
+                            <span class="payment-method__info">
+                                <strong>PayPal</strong>
+                                <small>Secure online payment<?= !$paypalEnabled ? ' (configure API keys to enable)' : '' ?></small>
+                            </span>
+                        </span>
+                    </label>
+                </div>
             </div>
 
             <aside class="checkout-summary">
@@ -144,13 +174,26 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
                 <div class="cart-summary__row cart-summary__row--total">
                     <span>Total</span>
-                    <span><?= formatPrice($grandTotal) ?></span>
+                    <span id="checkoutTotal"><?= formatPrice($grandTotal) ?></span>
                 </div>
-                <button type="submit" class="btn btn--primary btn--lg btn--block">Place Order</button>
+
+                <button type="submit" class="btn btn--primary btn--lg btn--block" id="placeOrderBtn">Place Order</button>
+                <div id="paypalButtonContainer" class="paypal-button-container" hidden></div>
                 <p class="checkout-summary__secure">🔒 Your information is secure</p>
             </aside>
         </form>
     </div>
 </section>
+
+<?php if ($paypalEnabled): ?>
+<script src="https://www.paypal.com/sdk/js?client-id=<?= sanitize(PAYPAL_CLIENT_ID) ?>&currency=USD"></script>
+<?php endif; ?>
+<script>
+window.BAMBE_CHECKOUT = {
+    paypalEnabled: <?= $paypalEnabled ? 'true' : 'false' ?>,
+    grandTotalRwf: <?= (float) $grandTotal ?>,
+};
+</script>
+<script src="assets/js/checkout.js"></script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
